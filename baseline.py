@@ -21,7 +21,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, utils, datasets
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-from baseline import MTCNN, InceptionResnetV1, fixed_image_standardization, training
+from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training
 
 # 参数
 lr = 0.05
