@@ -55,7 +55,7 @@ class ArcLoss(nn.Module):
         return loss
 
 
-# 提取人脸并保存
+# 用face_recognition库提取人脸并保存
 def data_extract(root_path):
     c_dir = sorted(os.walk(root_path).__next__()[1])
     cropped_path = root_path + '_cropped'
@@ -83,6 +83,40 @@ def data_extract(root_path):
                 if index % 10 == 0:
                     print(f"{index}")
     print("Extract done!")
+
+ 
+# 用facenet_pytorch库的mtcnn提取人脸
+def data_process():
+    trans = transforms.Compose([
+        transforms.Resize((160, 160)),
+    ])
+
+    mtcnn = MTCNN(
+        image_size=160, margin=0, min_face_size=5,
+        thresholds=[0.1, 0.2, 0.3], factor=0.2, post_process=True,
+        device=device
+    )
+
+    dataset = datasets.ImageFolder(test_path, transform=trans)
+    dataset.samples = [
+        (p, p.replace(test_path, test_path + '_cropped'))
+        for p, _ in dataset.samples
+    ]
+
+    loader = DataLoader(
+        dataset,
+        num_workers=workers,
+        batch_size=1,
+        collate_fn=training.collate_pil
+    )
+
+    for i, (x, y) in enumerate(loader):
+        print(x, y)
+        mtcnn(x, save_path=y)
+        print('\rBatch {} of {}'.format(i + 1, len(loader)), end='')
+
+    # 将mtcnn从gpu中移除
+    del mtcnn    
 
 
 def train():
@@ -125,7 +159,7 @@ def test(distance_metric='cosine', threshold=0.8):
             similarity = 0.5 + 0.5 * similarity
 
         predict_issame = np.less(threshold, similarity)         # np.less(x1, x2) 检查x1是否小于x2
-        predict = int(predict_issame[0])
+        predict = int(predict_issame)
         df.loc[int(classes_test[idx]), 'predict'] = predict
     print(df)
 
